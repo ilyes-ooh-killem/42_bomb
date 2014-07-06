@@ -1,0 +1,14 @@
+" Your old .vimrc is renamed to .vimrc_old
+
+:inoremap i i<bs>
+:inoremap a a<bs>
+:inoremap e e<bs>
+:inoremap o o<bs>
+:inoremap u u<bs>
+:inoremap y y<bs>
+:inoremap A A<bs>
+:inoremap E E<bs>
+:inoremap I I<bs>
+:inoremap O O<bs>
+:inoremap U U<bs>
+:inoremap Y Y<bs>
