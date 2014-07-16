@@ -6,7 +6,7 @@
 /*   By: ihermell <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2014/07/15 01:40:58 by ihermell          #+#    #+#             */
-/*   Updated: 2014/07/15 17:14:55 by ihermell         ###   ########.fr       */
+/*   Updated: 2014/07/16 02:40:54 by ihermell         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,26 +15,59 @@
 #include <unistd.h>
 #include <string.h>
 
-int		ft_intlen(int nb)
-{
-	if (nb < 1)
-		return (0);
-	return (1 + ft_intlen(nb / 10));
+int		is_first_operator(char c);
+int		is_number(char c);
+
+int ft_intlen(int x) {
+	if (x < 0)
+		x *= -1;
+	if(x>=100000) {
+		if(x>=10000000) {
+			if(x>=1000000000) return 10;
+			if(x>=100000000) return 9;
+			return 8;
+		}
+		if(x>=1000000) return 7;
+		return 6;
+	}
+	else {
+		if(x>=1000) {
+			if(x>=10000) return 5;
+			return 4;
+		} else {
+			if(x>=100) return 3;
+			if(x>=10) return 2;
+			return 1;
+		}
+	}
 }
 
 char	*ft_itoa(int nb)
 {
 	char	*str;
 	int		int_len;
+	int		negative;
 
-	int_len = ft_intlen(nb);
+	printf("ITOA B4 : %d\n", nb);
+	negative = 0;
+	int_len = 0;
+	if (nb < 0)
+	{
+		negative = 1;
+		nb *= -1;
+		int_len = 1;
+	}
+	int_len += ft_intlen(nb);
 	str = (char*)malloc(sizeof(char) * (int_len + 1));
 	str[int_len] = '\0';
-	while (int_len-- > 0)
+	while (int_len-- > negative)
 	{
 		str[int_len] = (nb % 10) + 48;
 		nb /= 10;
-	}	
+	}
+	if (negative)
+		str[0] = '-';
+	printf("ITOA After: %s\n", str);
 	return (str);
 }
 
@@ -58,7 +91,7 @@ int		ft_atoi(char *str)
 		nbr += str[i] - '0';
 		i++;
 	}
-	return (nbr);
+	return (is_negative * nbr);
 }
 
 int		ft_natoi(char *str, int l)
@@ -98,7 +131,14 @@ void	ft_putnstr(char *str, int n)
 
 int		is_operator(char c)
 {
-	if (c == '+')
+	if ((c == '+' || c == '-' || is_first_operator(c)) )
+		return (1);
+	return (0);
+}
+
+int		is_valid_operator(char c, char c2)
+{
+	if (is_operator(c) && !is_number(c2))
 		return (1);
 	return (0);
 }
@@ -109,7 +149,6 @@ int		is_first_operator(char c)
 		return (1);
 	return (0);
 }
-
 int		is_number(char c)
 {
 	if (c >= '0' && c <= '9')
@@ -117,67 +156,145 @@ int		is_number(char c)
 	return (0);
 }
 
-int		calculate_first_operands_expr(char *expr, int l)
-{
-	int		i;
-
-	i = 0;
-	while (i < l && expr[i] != '\0')
-	{
-
-
-
-
-int	evaluate_product_expr(char *expr)
-{
-}
-int	calculate_base_result(char *expr, char first_operand, char second_operand, int result)
+int	calculate_product_expr(char *expr, char first_operand, char *second_operand, int result)
 {
 	char *nb;
 	char *nb_start;
-
+	int cursor;
 	int i;
 
+	cursor = 0;
 	nb = (char*)malloc(sizeof(char) * 11);
-	if (!second_operand) // null
-	while (!is_number(expr[cursor])i)
+	while (!is_number(expr[cursor]) && !(expr[cursor] == '-' && is_number(expr[cursor + 1])))
 		cursor++;
-	nb_start = expr[cursor];
+	nb_start = expr + cursor;
+	//printf("WHILE : %s\n", nb_start);
 	i = 0;
-	while (is_number(expr[cursor++]))
+	while (is_number(expr[cursor++]) || (i == 0 && nb_start[i] == '-'))
 	{
 		nb[i] = expr[cursor - 1];
 		i++;
 	}
+	//printf("NB : %s\n", nb);
+	printf("RESULT LOL : %d\n", result);
+	//printf("1st %c\n", first_operand);
+	//printf("2nd %c\n", second_operand[0]);
+	//printf("atoi %d\n", ft_atoi(nb));
+	if (second_operand[0] == '\0' || second_operand[0] == ')')
+	{
+		if (first_operand == '*')
+			return (result * ft_atoi(nb));
+		if (first_operand == '/')
+			return (result / ft_atoi(nb));
+		if (first_operand == '%')
+		   return (result % ft_atoi(nb));	
+	}
 	if (is_first_operator(second_operand[0]))
-		return (result + evaluate_product_expr(nb_start));
+	{
+		if (first_operand == '*')
+			return (evaluate_product_expr(second_operand, result * ft_atoi(nb)));
+		if (first_operand == '/')
+			return (evaluate_product_expr(second_operand, result / ft_atoi(nb)));
+		if (first_operand == '%')
+			return (evaluate_product_expr(second_operand, result % ft_atoi(nb)));
+	}
+		if (first_operand == '*')
+			return (result * ft_atoi(nb) + evaluate_base_expr(second_operand, 0));
+		if (first_operand == '/')
+			return (result / ft_atoi(nb) + evaluate_base_expr(second_operand, 0));
+		if (first_operand == '%')
+			return (result % ft_atoi(nb) + evaluate_base_expr(second_operand, 0));
+
+}
+
+
+int	evaluate_product_expr(char *expr, int result)
+{
+	char first_operand;
+	char *second_operand;
+	int cursor;
+	char *nb_start;
+	int nb;
+
+	printf("Evaluate product : '%s'\n", expr);
+	first_operand = expr[0];
+	cursor = 1;
+	while (expr[cursor] != '\0'&& expr[cursor] != ')' && !(is_valid_operator(expr[cursor], expr[cursor + 1])))
+		cursor++;	
+	second_operand = expr + cursor;
+	return calculate_product_expr(expr, first_operand, second_operand, result);
+}
+
+int	calculate_base_result(char *expr, char first_operand, char *second_operand, int result)
+{
+	char *nb;
+	char *nb_start;
+	int cursor;
+	int i;
+
+	cursor = 0;
+	nb = (char*)malloc(sizeof(char) * 11);
+	while (!is_number(expr[cursor]))
+		cursor++;
+	nb_start = expr + cursor;
+	//printf("WHILE : %s\n", nb_start);
+	i = 0;
+	while (is_number(expr[cursor++]) || (i == 0 && nb_start[i] == '-'))
+	{
+		nb[i] = expr[cursor - 1];
+		i++;
+	}
+	//printf("NB : %s\n", nb);
+	//printf("%d\n", result);
+	printf("1st %c\n", first_operand);
+	printf("2nd %c\n", second_operand[0]);
+	//printf("atoi %d\n", ft_atoi(nb));
+	//printf("RESSULLLT : %d\n", result - ft_atoi(nb));
+	
+	if (second_operand[0] == '\0' || second_operand[0] == ')')
+	{
+		if (first_operand == '+')
+			return (result + ft_atoi(nb));
+		if (first_operand == '-')
+			return (result - ft_atoi(nb));
+	}
+	if (is_first_operator(second_operand[0]))
+	{
+		if (first_operand == '+')
+			return (result + evaluate_product_expr(second_operand, ft_atoi(nb)));
+		if (first_operand == '-')
+			return (result - evaluate_product_expr(second_operand, ft_atoi(nb)));
+	}
 	if (first_operand == '+')
-		return (result + ft_atoi(nb) + evaluate_base_expr(second_operand));
+		return (result + ft_atoi(nb) + evaluate_base_expr(second_operand, result));
 	else if (first_operand == '-')
-		return (result - ft_atoi(nb) + evaluate_base_expr(second_operand));
+		return (result - ft_atoi(nb) + evaluate_base_expr(second_operand, result));
 }
 
 int	evaluate_base_expr(char *expr, int result)
 {
 	char first_operand;
 	char *second_operand;
-	char *first_expr;
 	int nb_l;
 	int cursor;
 
+	printf("'Evaluate product : %s\n", expr);
+	//printf("\n'%s'\n", expr);
 	cursor = 0;
-	first_expr_l = 0;
+	while (expr[cursor] == ' ')
+		cursor++;
 	if (!is_operator(expr[cursor]))
 		first_operand = '+';
 	else
 		first_operand = expr[cursor];
 	cursor++;
-	while (!is_operator(expr[cursor]) && expr[cursor] != '\0')
-		cursor++;
+	while (expr[cursor] != '\0' && expr[cursor] != ')' && !(is_valid_operator(expr[cursor], expr[cursor + 1])))
+		cursor++;	
 	second_operand = expr + cursor;
-	result = calculate_result();
-			}
-char *calculate_expr(char *expr)
+	return calculate_base_result(expr, first_operand, second_operand, result);
+}
+
+/*char *calculate_expr(char *expr)
 {
 	int	result = 0;
 	int		cursor = 0;
@@ -225,6 +342,43 @@ char *calculate_expr(char *expr)
 	}
 	return (ft_itoa(result));
 }
+*/
+
+char *link_expr(char *expr)
+{
+	char *copy;
+	int i;
+	int size;
+
+	printf("ORIGGG '%s'", expr);
+	if (expr[0] == ')' || expr[0] == '\0')
+		return ("");
+	i = 0;
+	size = 0;
+	while (!is_number(expr[size]) && expr[size] != '(')
+	{
+ 		printf("CHAR : %c\n", expr[i]);
+		size++;
+	}
+	printf("SIZZEEE : %d\n", size);
+	copy = (char*)malloc(sizeof(char) * (size + 1));
+	i = 0;
+	while (i++ < size)	
+		copy[i - 1] = expr[i - 1];
+	copy[i] = '\0';
+	printf("LIIIINKKK : '%s'", copy);
+	return (copy);
+}
+
+int	ft_strlen(char *str)
+{
+	int size;
+
+	size = 0;
+	while (*(str++) != '\0')
+		size++;
+	return (size);
+}
 
 char *eval_expr(char *str)
 {
@@ -235,11 +389,14 @@ char *eval_expr(char *str)
 	int		len_expr;
 	int		sub_expr_cursor;
 	int		cursor;
+	int		result;
 	char *test;
 
+	result = 0;
 	cursor = 0;
 	len_expr = 0;
-	if (!str[cursor])
+
+	if (!str[cursor] || str[cursor] == ')')
 		return ("");
 	printf("To eval : %s\n", str);
 	while (str[cursor] != '\0')
@@ -254,15 +411,18 @@ char *eval_expr(char *str)
 			while (str[sub_expr_cursor] != ')' || depth_expr > 1)
 			{
 				if (str[sub_expr_cursor] == '(')
+				{	
 					depth_expr++;
+				}
 				if (str[sub_expr_cursor] == ')')
 					depth_expr--;
 				len_expr++;
 				sub_expr_cursor++;
 			}
 			char *eval_m_expr = eval_expr(start_expr + 1);
-			//char *eval_e_expr = eval_expr(start_expr + len_expr + 3); 
-			test = (char*)malloc(pos_start_expr + strlen(eval_m_expr));// + strlen(eval_e_expr));
+			char *eval_e_expr = eval_expr(start_expr + len_expr + 2);
+			char *link = link_expr(start_expr + len_expr + 2);
+			test = (char*)malloc(pos_start_expr + strlen(eval_m_expr) + strlen(link) + strlen(eval_e_expr) + 1);
 			int nawak = 0;
 			while (copy[nawak] != '\0')
 			{
@@ -270,15 +430,29 @@ char *eval_expr(char *str)
 				nawak++;
 			}
 			int i = 0;
-			while (eval_m_expr[i] != 0)
+			while (eval_m_expr[i] != '\0')
 			{
 				test[nawak] = eval_m_expr[i];
 				nawak++;
 				i++;
 			}
+			i = 0;
+			while (link[i] != '\0')
+			{
+				test[nawak] = link[i];
+				nawak++;
+				i++;
+			}
+			i = 0;
+			while (eval_e_expr[i] != '\0')
+			{
+				test[nawak] = eval_e_expr[i];
+				nawak++;
+				i++;
+			}
+			test[nawak] = '\0';
 			cursor++;
-			printf("Test : %s\n", calculate_expr(test));
-			return (test);
+			return ft_itoa(evaluate_base_expr(test, 0));
 			//printf("Start : %d", pos_start_expr);
 			//printf("p :%d\n", pos_start_expr + len_expr + 1);
 			//printf("s :%s\n", start_expr + len_expr + 1);
@@ -287,19 +461,17 @@ char *eval_expr(char *str)
 		}
 		if (str[cursor] == ')')
 		{	
-			printf("S: %s\n", str);
+			printf("String evaluated : %s\n", str);
 			//printf("Curs: %d\n", cursor);
 			//printf("Str : %s\n", str);
 
-			return calculate_expr(str);
+			return ft_itoa(evaluate_base_expr(str, 0));
 		}
-		printf("%c\n", str[cursor]);
 		copy[cursor] = str[cursor];
 		copy[cursor + 1] = '\0';
 		cursor++;
 	}
-	printf("FINAL VALUE : %s", test);
-	return "e";
+	return ft_itoa(evaluate_base_expr(str, 0));
 }
 
 int		main(int ac, char **av)
